@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><title>Receiver</title></head>
+<body>
+  <h2>📥 Receiving Stream...</h2>
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQOHOKa_8jbBsYOpcpZUEOlAFtRXVoms8",
+      authDomain: "webrtc-trading-336c4.firebaseapp.com",
+      databaseURL: "https://webrtc-trading-336c4-default-rtdb.firebaseio.com",
+      projectId: "webrtc-trading-336c4",
+      storageBucket: "webrtc-trading-336c4.firebasestorage.app",
+      messagingSenderId: "999184398125",
+      appId: "1:999184398125:web:b1f860a55c2d256ae4c5a4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let peerConnection = new RTCPeerConnection();
+
+    peerConnection.ontrack = event => {
+      document.getElementById("remoteVideo").srcObject = event.streams[0];
+    };
+
+    db.ref("offer").once("value").then(snapshot => {
+      const offer = snapshot.val();
+      if (!offer) return;
+      const offerDesc = new RTCSessionDescription(JSON.parse(offer));
+      return peerConnection.setRemoteDescription(offerDesc);
+    }).then(() => {
+      return peerConnection.createAnswer();
+    }).then(answer => {
+      return peerConnection.setLocalDescription(answer);
+    }).then(() => {
+      db.ref("answer").set(JSON.stringify(peerConnection.localDescription));
+    });
+  </script>
+</body>
+</html>
